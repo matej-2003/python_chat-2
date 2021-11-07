@@ -57,8 +57,10 @@ class ChatClient:
         self.t = threading.Thread(target=self.listen_for_messages)
         self.t.deamon = True
         self.t.start()
-
+        
+        time.sleep(0.01)
         self.request_messages()
+        time.sleep(0.01)
         self.request_user_data()
 
     def listen_for_messages(self):
