@@ -9,14 +9,21 @@ class ChatClient:
         self.host = host
         self.port = port
         self.messages = []
+        self.messages_response = False
         self.users = []
+        self.user_data_response = False
         self.username = username
         self.password = password
         self.s = None
         self.on_new_message = None
         self.on_user_update = None
         self.conn_status = 0
+        self.t = None
     
+    def action_func(self, on_new_message, on_user_update):
+        self.on_new_message = on_new_message
+        self.on_user_update = on_user_update
+
     def connect(self, username=None, password=None):
         if not not username:
             self.username = username
@@ -28,14 +35,14 @@ class ChatClient:
         self.s.connect((self.host, self.port))
         # print("[+] Connected.")
         # print("[+] sending connect request")
-        self.s.send(client.connect(self.username, self.password))
+        self.s.sendall(client.connect(self.username, self.password))
 
         msg = self.s.recv(1024).decode()
         msg = client.parse(msg)
         # print(f"[server] -> {msg}")
         if msg != client.PARSE_ERROR:
             if msg["response"] == UNAUTHORIZED:
-                # print("[!] UNAUTHORIZED closing connection ...")
+                print("[!] UNAUTHORIZED closing connection ...")
                 time.sleep(0.5)
                 self.s.close()
                 exit()
@@ -43,16 +50,16 @@ class ChatClient:
             # print("[!] INVALID REQUEST closing connection ...")
             time.sleep(0.5)
             self.s.close()
-            exit()
+            # exit()
         self.conn_status = 1
         # print("[+] successful authentication")
 
-        t = threading.Thread(target=self.listen_for_messages)
-        t.deamon = True
-        t.start()
+        self.t = threading.Thread(target=self.listen_for_messages)
+        self.t.deamon = True
+        self.t.start()
 
-        self.get_messages()
-        self.get_users()
+        self.request_messages()
+        self.request_user_data()
 
     def listen_for_messages(self):
         while self.conn_status:
@@ -77,35 +84,55 @@ class ChatClient:
     def handle_get(self, message):
         if message["response"]["type"] == GET_MESSAGES:
             self.messages = message["response"]["data"]
+            self.messages_response = True
         elif message["response"]["type"] == GET_USER_DATA:
             self.users = message["response"]["data"]
+            self.user_data_response = True
     
     def send(self, msg):
-        self.s.send(client.send(msg))
+        self.s.sendall(client.send(msg))
 
     def disconnect(self):
-        self.s.send(client.disconnect())
+        """
+            `time.sleep(0.05)` the purpuse of this line of code is to
+            wait for the server to send another message to continue
+            the blocking line 64 `message = client.parse(message)` (it doesent matter what message is as long as its sent)
+            the line is stopping the `self.t` thread from checking the `self.conn_status` because it is a blocking peace
+            of code and it is preventing the program to properly exit.
+        """
+        self.s.sendall(client.disconnect())
         self.conn_status = 0
-        time.sleep(0.1)
+        time.sleep(0.05)
         self.s.close()
     
+    def request_messages(self):
+        self.s.sendall(client.get_messages())
+    
     def get_messages(self):
-        self.s.send(client.get_messages())
+        while not self.messages_response:
+            pass
+        return self.messages
 
-    def get_users(self):
-        self.s.send(client.get_users())
+    def request_user_data(self):
+        self.s.sendall(client.get_users())
+
+    def get_user_data(self):
+        while not self.user_data_response:
+            pass
+        return self.users
 
     def handle_new_message(self, message):
-        self.messages.append(message.response)
+        self.messages.append(message["response"])
         if not not self.on_new_message:
             self.on_new_message()
 
     def handle_user_update(self, message):
-        self.users = message.response.data
+        self.users = message["response"]
         if not not self.on_user_update:
             self.on_user_update()
 
     def handle_error(self, message):
+        pass
         # print(f"[server] -> ERROR : {message}")
 
 

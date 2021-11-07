@@ -24,6 +24,8 @@ def set_pair(name, *args):
 def get_pair(name):
     return curses.color_pair(pairs[name])
 
+event_list = {}
+
 class Button:
 	def __init__(self, win, x, y, value, action=None):
 		self.x = x
@@ -32,6 +34,7 @@ class Button:
 		self.length = len(value)
 		self.action = action
 		self.win = win
+		event_list
 
 	def is_hover(self, mouse_x, mouse_y):
 		return mouse_y == self.y and mouse_x in range(self.x, self.x + self.length)
@@ -51,6 +54,7 @@ class Button:
 	def display(self):
 		self.win.addstr(self.y, self.x, self.value, get_pair("button"))
 
+
 def main(screen):
 	curses.curs_set(0)
 	curses.mousemask(1)
@@ -65,8 +69,8 @@ def main(screen):
 	def action_2():
 		screen.addstr(0, 0, "Hello!", curses.color_pair(2))
 
-	b1 = Button(screen, 5, 3, "Button 1", action=action_1)
-	b2 = Button(screen, 5, 4, "Button 2", action=action_2)
+	b1 = Button(screen, 5, 3, "<Button 1>", action=action_1)
+	b2 = Button(screen, 5, 4, "<Button 2>", action=action_2)
 
 	b1.display()
 	b2.display()
@@ -83,11 +87,27 @@ def main(screen):
 	# t = threading.Thread(target=hover)
 	# t.start()
 
+	def handle_event(event_list=[]):
+		while True:
+			key = screen.getch()
+			if key == curses.KEY_EXIT:
+				break
+			for event_handler in event_list:
+				if key == event_handler["event"]:
+					for func in event_handler["action"]:
+						if not not func:
+							func()
+
+	t = threading.Thread(handle_event, args=(event_list))
+
 	while 1:
 		screen.refresh()
 		b1.display()
 		b2.display()
 		key = screen.getch()
+
+		if key == ord("\t"):
+			pass
 
 		if key == curses.KEY_MOUSE:
 			_, x, y, _, _ = curses.getmouse()

@@ -1,7 +1,7 @@
 import socket
 import threading
 from protocol.messages import *
-from protocol import check_password
+from protocol import check_password, hash_password
 import csv
 
 EXIT_MSG = "connection closed..."
@@ -17,7 +17,7 @@ class ChatServer:
         self.s = None
         self.client_sockets = set()
         self.users = []
-        self.messages = [client.new_message("matej", "lorem ipsum....") for _ in range(2)]
+        self.messages = []
     
     def load_user_file(self, filename):
         with open(filename, 'r') as file:
@@ -40,20 +40,20 @@ class ChatServer:
             try:
                 client_socket, client_address = self.s.accept()
                 print(f"[+] {client_address} connected. {len(self.client_sockets)}")
-                msg = server.parse(client_socket.recv(1024).decode())
+                parse_status, msg = server.parse(client_socket.recv(1024).decode())
                 
-                if msg != server.PARSE_ERROR:
+                if parse_status != server.PARSE_ERROR:
                     if msg['method'] == CONNECT:
                         if self.handle_connect(msg):
                             self.client_sockets.add(client_socket)
-                            client_socket.send(server.accept())
+                            client_socket.sendall(server.accept())
                             print(f"[client] -> {msg}")
                             t = threading.Thread(target=self.main_loop, args=(client_socket, msg["data"]["username"]))
                             t.daemon = True
                             t.start()
                             continue    #skip the rest of the code to avoid triping close connection
-
-                client_socket.send(server.deny())
+                print(f"[error] -> {msg}")
+                client_socket.sendall(server.deny())
                 client_socket.close()
 
             except KeyboardInterrupt:
@@ -68,12 +68,12 @@ class ChatServer:
     def main_loop(self, cs, username):
         while True:
             try:
-                msg = server.parse(cs.recv(1024).decode())
-                print(f"[client] -> {msg}")
-                if msg != server.PARSE_ERROR:
+                parse_status, msg = server.parse(cs.recv(1024).decode())
+                if parse_status != server.PARSE_ERROR:
+                    print(f"[client] -> {msg}")
                     method = msg["method"]
                     if method == DISCONNECT:
-                        self.handle_disconnect(username, cs)
+                        self.handle_disconnect(cs, username)
                         break
                     elif method == GET:
                         self.handle_get(cs, msg)
@@ -81,8 +81,10 @@ class ChatServer:
                     elif method == SEND:
                         self.handle_send(msg, username)
                         continue
-                cs.send(server.error())
+                print(f"[error] -> {msg}")
+                cs.sendall(server.error())
             except Exception as e:
+                cs.sendall(server.error())
                 print(f"[!] Error: {e}")
                 break
         print(EXIT_MSG)
@@ -92,13 +94,14 @@ class ChatServer:
                 break
         self.client_sockets.remove(cs)
 
-    def handle_disconnect(self, username, cs):
+    def handle_disconnect(self, cs, username):
+        cs.sendall(server.disconnect())
         for i in self.users:
             if username == i["username"]:
                 i["status"] = 0
         for s in self.client_sockets:
             if s != cs:
-                s.send(server.user_update(self.users))
+                s.sendall(server.user_update(self.users))
 
     def handle_connect(self, msg):
         if "data" in msg:
@@ -106,7 +109,7 @@ class ChatServer:
                 tmp = self.handle_authentication(msg["data"]["username"], msg["data"]["password"])
                 if tmp:
                     for s in self.client_sockets:
-                        s.send(server.user_update(self.users))
+                        s.sendall(server.user_update(self.users))
                 return tmp
         return False
 
@@ -115,12 +118,12 @@ class ChatServer:
             if ("type" in msg["data"]):
                 type = msg["data"]["type"]
                 if type == GET_MESSAGES:
-                    cs.send(server.data(self.messages, GET_MESSAGES))
+                    cs.sendall(server.data(self.messages, GET_MESSAGES))
                     return
                 elif type == GET_USER_DATA:
-                    cs.send(server.data(parse_users(self.users), GET_USER_DATA))
+                    cs.sendall(server.data(parse_users(self.users), GET_USER_DATA))
                     return
-        cs.send(server.error())
+        cs.sendall(server.error())
 
     def handle_send(self, msg, username):
         if "data" in msg:
@@ -128,7 +131,7 @@ class ChatServer:
                 message_formated = client.new_message(username, msg["data"]["message"])
                 self.messages.append(message_formated)
                 for s in self.client_sockets:
-                    s.send(server.new_message(message_formated))
+                    s.sendall(server.new_message(message_formated))
 
     def handle_authentication(self, username, password):
         for i in self.users:
@@ -156,5 +159,5 @@ if __name__ == '__main__':
         """)
     chat_server = ChatServer(host=SERVER_HOST, port=SERVER_PORT)
     chat_server.load_user_file("users.csv")
-    print(chat_server.users)
+    print([i["username"] for i in chat_server.users])
     chat_server.start()

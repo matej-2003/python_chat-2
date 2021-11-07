@@ -46,7 +46,7 @@ class client:
         try:
             message_formated = json.loads(msg)
             if "type" in message_formated:
-                if message_formated["type"] in (AUTH, GET, NEW_MESSAGE, USERS_UPDATE, ERROR):
+                if message_formated["type"] in (AUTH, GET, NEW_MESSAGE, USERS_UPDATE, ERROR, DISCONNECT):
                     return message_formated
             if not not logger:
                 logger(f"'{msg}' invalid message")
@@ -69,8 +69,8 @@ class client:
         return json.dumps({"method": SEND, "data": {"message": msg}}).encode()
 
     @staticmethod
-    def new_message(sender, content):
-        return {"from": sender, "time": datetime.now().strftime('%H:%M:%S'), "content": content}
+    def new_message(sender, content, timestamp_pattern='%H:%M:%S'):
+        return {"from": sender, "time": datetime.now().strftime(timestamp_pattern), "content": content}
 
     @staticmethod
     def get(type):
@@ -89,21 +89,22 @@ class server:
     # and returns the accept_response
     # server returns the deny_response and closes the connection
     PARSE_ERROR = 10
+    PARSE_OK = 9
 
     @classmethod
     def parse(cls, msg, logger=None):
         try:
             message_formated = json.loads(msg)
             if "method" in message_formated:
-                if message_formated["method"] in (CONNECT, SEND, GET, DISCONNECT):
-                    return message_formated
+                if message_formated["method"] in (CONNECT, SEND, GET, DISCONNECT, NEW_MESSAGE, USERS_UPDATE):
+                    return (cls.PARSE_OK, message_formated)
             if not not logger:
                 logger(f"'{msg}' invalid message")
-            return cls.PARSE_ERROR
+            return (cls.PARSE_ERROR, message_formated)
         except json.JSONDecodeError:
             if not not logger:
                 logger(f"'{msg}' invalid message")
-            return cls.PARSE_ERROR
+            return (cls.PARSE_ERROR, f'json error {msg}')
 
     accept_response = {"type": AUTH, "response": AUTHORIZED}
     deny_response = {"type": AUTH, "response": UNAUTHORIZED, "desc": "invalid credentials"}
@@ -111,6 +112,7 @@ class server:
     user_data_response = {"type": GET, "response": {"type": GET_MESSAGES, "data": None}}
     new_message = {"type": NEW_MESSAGE, "response": {"from": None, "time": None, "content": None}}
     user_update = {"type": USERS_UPDATE, "response": None}
+    disconnect_response = {"type": DISCONNECT}
     error_response = {"type": ERROR, "response": "invalid request"}
 
     @staticmethod
@@ -137,6 +139,10 @@ class server:
     def user_update(users):
         users_formated = [(i["username"], i["status"]) for i in users]
         return json.dumps({"type": USERS_UPDATE, "response": users_formated}).encode()
+
+    @classmethod
+    def disconnect(cls):
+        return json.dumps(cls.disconnect_response).encode()
 
     @staticmethod
     def error(type="invalid request", desc=""):

@@ -123,19 +123,21 @@ def main(screen):
             refresh_all()
             time.sleep(0.5)
 
-    t = threading.Thread(target=animation)
-    t.daemon = True
-    t.start()
+    # t = threading.Thread(target=animation)
+    # t.daemon = True
+    # t.start()
 
     while True:
         server_ip_input = Textbox(server_ip)
         server_ip_input.edit()
         username.refresh()
-        username_ = Textbox(username)
-        username_.edit()
-        password.refresh()
-        password_ = Textbox(password)
-        password_.edit()
+
+    
+        # username_ = Textbox(username)
+        # username_.edit()
+        # password.refresh()
+        # password_ = Textbox(password)
+        # password_.edit()
 
 if __name__ == "__main__":
     curses.wrapper(main)
