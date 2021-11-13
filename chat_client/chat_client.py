@@ -135,27 +135,3 @@ class ChatClient:
     def handle_error(self, message):
         pass
         # print(f"[server] -> ERROR : {message}")
-
-
-# if __name__ == '__main__':
-#     SERVER_HOST = "127.0.0.1"
-#     SERVER_PORT = 5002
-
-#     if len(sys.argv) == 3:
-#         SERVER_HOST = str(sys.argv[1])
-#         SERVER_PORT = int(sys.argv[2])
-#     elif len(sys.argv) == 2:
-#         SERVER_HOST = str(sys.argv[1])
-#     else:
-#         print("""
-#         Correct ussage:
-#             'script IP PORT'
-#             'script IP'
-#             default port is 5002
-#         """)
-    
-#     app = ChatClient(host=SERVER_HOST, port=SERVER_PORT, username="matej", password="kodermac")
-#     app.connect()
-
-#     time.sleep(1)
-#     app.disconnect()

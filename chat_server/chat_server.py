@@ -1,16 +1,12 @@
 import socket
 import threading
 from protocol.messages import *
-from protocol import check_password, hash_password
+from protocol import check_password
 import csv
 
-EXIT_MSG = "connection closed..."
-ERROR = "error {}"
-
-def parse_users(users):
-    return [(i["username"], i["status"]) for i in users]
-
 class ChatServer:
+    EXIT_MSG = "connection closed..."
+    ERROR = "error {}"
     def __init__(self, host='127.0.0.1', port=8888):
         self.host = host
         self.port = port
@@ -87,7 +83,7 @@ class ChatServer:
                 cs.sendall(server.error())
                 print(f"[!] Error: {e}")
                 break
-        print(EXIT_MSG)
+        print(ChatServer.EXIT_MSG)
         for i in self.users:
             if username == i["username"]:
                 i["status"] = 0
@@ -121,7 +117,7 @@ class ChatServer:
                     cs.sendall(server.data(self.messages, GET_MESSAGES))
                     return
                 elif type == GET_USER_DATA:
-                    cs.sendall(server.data(parse_users(self.users), GET_USER_DATA))
+                    cs.sendall(server.data(ChatServer.parse_users(self.users), GET_USER_DATA))
                     return
         cs.sendall(server.error())
 
@@ -139,25 +135,7 @@ class ChatServer:
                 i["status"] = 1
                 return True
         return False
-
-if __name__ == '__main__':
-    import sys
-
-    SERVER_HOST = "0.0.0.0"     # server's IP address
-    SERVER_PORT = 5002
-    if len(sys.argv) == 3:
-        SERVER_HOST = str(sys.argv[1])
-        SERVER_PORT = int(sys.argv[2])
-    elif len(sys.argv) == 2:
-        SERVER_PORT = int(sys.argv[1])
-    else:
-        print("""
-        Correct ussage:
-            'script IP PORT'
-            'script IP'
-            default port is 5002
-        """)
-    chat_server = ChatServer(host=SERVER_HOST, port=SERVER_PORT)
-    chat_server.load_user_file("users.csv")
-    print([i["username"] for i in chat_server.users])
-    chat_server.start()
+    
+    @staticmethod
+    def parse_users(users):
+        return [(i["username"], i["status"]) for i in users]

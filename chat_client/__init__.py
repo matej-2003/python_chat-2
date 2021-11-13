@@ -1,5 +1,5 @@
-from ChatClient.chat_client import ChatClient
-from interface import set_pair, get_pair, BG_COLOR
+from chat_client.chat_client import ChatClient
+from interface.colors import set_pair, get_pair, BG_COLOR
 from curses.textpad import Textbox
 import curses
 import threading
@@ -115,7 +115,7 @@ class ChatClientTUI:
 			self.update_bg()
 			if tmp:
 				self.refresh_all()
-			time.sleep(1)
+			time.sleep(0.5)
 	
 	def display_message(self, msg):
 		date_format = "[%s]" % (msg['from'])
@@ -172,13 +172,13 @@ class ChatClientTUI:
 			self.textbox_inner.erase()
 			self.textbox_inner.refresh()
 			box.edit()
-			msg = box.gather().strip("\n").strip(" ")
+			msg = box.gather().replace("\n", " ").strip("\n ")
 			if msg.lower() == 'q':
 				self.status = 0
 				self.chat_client.disconnect()
 				break
 			else:
-				if not not msg.lower().strip("\n").strip(" "):
+				if not not msg.lower():
 					self.chat_client.send(msg)
 				pass
 		exit()
