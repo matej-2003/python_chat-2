@@ -7,7 +7,8 @@ class Vigenere(Crypto):
 	letters of a keyword. It employs a form of polyalphabetic substitution.[1][2]
 	source: https://en.wikipedia.org/wiki/Vigenère_cipher
 	"""
-	def __init__(self, key="a"):
+	def __init__(self, key="a", encode=False):
+		super().__init__(encode=encode)
 		self.key = key
 
 	def encrypt(self, text):
@@ -23,7 +24,7 @@ class Vigenere(Crypto):
 			#new letter index is the index of the letter itself + the shif value
 			new_index = (CHARS.index(e) + shift) % len(CHARS)
 			encrypted_text += CHARS[new_index]
-		return encrypted_text
+		return self.encode_(encrypted_text)
 
 	def decrypt(self, encrypted_text):
 		text = ""

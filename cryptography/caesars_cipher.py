@@ -6,7 +6,8 @@ class Caesar(Crypto):
 	Caesar cipher, also known as Caesar's cipher, the shift cipher, Caesar's code or Caesar shift
 	"""
 	
-	def __init__(self, shift=None):
+	def __init__(self, shift=None, encode=False):
+		super().__init__(encode=encode)
 		if not self:
 			self.shift = random.randint(0, len(CHARS))
 		else:
@@ -18,7 +19,7 @@ class Caesar(Crypto):
 		for i in text:
 			new_index = (CHARS.index(i) + self.shift) % len(CHARS)
 			encrypted_text += CHARS[new_index]
-		return encrypted_text
+		return self.encode_(encrypted_text)
 
 	def decrypt(self, encrypted_text):
 		text = ""

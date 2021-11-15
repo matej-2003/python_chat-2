@@ -12,9 +12,9 @@ from cryptography.vigenere_cipher import Vigenere
 # dec = cesar.decrypt(enc)
 # print(cesar.shift)
 
-from protocol.messages import client, server
+from protocol.messages import client
 
-my_cyper = Vigenere(key="password")
+my_cyper = Vigenere(key="matejkodermac")
 print(my_cyper.encrypt("testing"))
 
 messages = [
@@ -26,6 +26,7 @@ messages = [
 ]
 
 for i in messages:
-    msg = i.decode()
+    msg = i
     msg_enc = my_cyper.encrypt(msg)
+    print(msg_enc)
     print(f"{msg_enc.encode()} -> {my_cyper.decrypt(msg_enc)[1]}")

@@ -58,15 +58,15 @@ class client:
 
     @staticmethod
     def connect(username, password):
-        return json.dumps({"method": CONNECT, "data": {"username": username, "password": password}}).encode()
+        return json.dumps({"method": CONNECT, "data": {"username": username, "password": password}})
 
     @staticmethod
     def disconnect():
-        return json.dumps({"method": DISCONNECT}).encode()
+        return json.dumps({"method": DISCONNECT})
 
     @staticmethod
     def send(msg):
-        return json.dumps({"method": SEND, "data": {"message": msg}}).encode()
+        return json.dumps({"method": SEND, "data": {"message": msg}})
 
     @staticmethod
     def new_message(sender, content, timestamp_pattern='%H:%M:%S'):
@@ -74,15 +74,15 @@ class client:
 
     @staticmethod
     def get(type):
-        return json.dumps({"method": GET, "data": {"type": type}}).encode()
+        return json.dumps({"method": GET, "data": {"type": type}})
 
     @classmethod
     def get_messages(cls):
-        return json.dumps(cls.messages_request).encode()
+        return json.dumps(cls.messages_request)
 
     @classmethod
     def get_users(cls):
-        return json.dumps(cls.user_data_request).encode()
+        return json.dumps(cls.user_data_request)
 
 class server:
     # server puts the Client in the client_list
@@ -117,33 +117,33 @@ class server:
 
     @staticmethod
     def accept():
-        return json.dumps({"type": AUTH, "response": AUTHORIZED}).encode()
+        return json.dumps({"type": AUTH, "response": AUTHORIZED})
 
     @staticmethod
     def deny():
-        return json.dumps({"type": AUTH, "response": UNAUTHORIZED, "desc": "invalid credentials"}).encode()
+        return json.dumps({"type": AUTH, "response": UNAUTHORIZED, "desc": "invalid credentials"})
 
     @staticmethod
     def data(data, type):
-        return json.dumps({"type": GET, "response": {"type": type, "data": data}}).encode()
+        return json.dumps({"type": GET, "response": {"type": type, "data": data}})
 
     # @staticmethod
     # def new_message(username, content):
-        # return json.dumps({"type": NEW_MESSAGE, "response": {"from": username, "time": datetime.now().strftime('%H:%M:%S'), "date": content}}).encode()
+        # return json.dumps({"type": NEW_MESSAGE, "response": {"from": username, "time": datetime.now().strftime('%H:%M:%S'), "date": content}})
 
     @staticmethod
     def new_message(msg):
-        return json.dumps({"type": NEW_MESSAGE, "response": msg}).encode()
+        return json.dumps({"type": NEW_MESSAGE, "response": msg})
 
     @staticmethod
     def user_update(users):
         users_formated = [(i["username"], i["status"]) for i in users]
-        return json.dumps({"type": USERS_UPDATE, "response": users_formated}).encode()
+        return json.dumps({"type": USERS_UPDATE, "response": users_formated})
 
     @classmethod
     def disconnect(cls):
-        return json.dumps(cls.disconnect_response).encode()
+        return json.dumps(cls.disconnect_response)
 
     @staticmethod
     def error(type="invalid request", desc=""):
-        return json.dumps({"type": ERROR, "response": type, "desc": desc}).encode()
+        return json.dumps({"type": ERROR, "response": type, "desc": desc})

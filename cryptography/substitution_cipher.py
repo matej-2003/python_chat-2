@@ -6,7 +6,8 @@ class SubCipher(Crypto):
 	SubCipher = substitution cipher
 	"""
 	
-	def __init__(self, key=None):
+	def __init__(self, key=None, encode=False):
+		super().__init__(encode=encode)
 		self.key = key
 		if not SubCipher.verify_key(key):
 			self.key = list(CHARS)
@@ -18,7 +19,7 @@ class SubCipher(Crypto):
 		encrypted_text = ""
 		for i in text:
 			encrypted_text += self.key[CHARS.index(i)]
-		return encrypted_text
+		return self.encode_(encrypted_text)
 
 	def decrypt(self, encrypted_text):
 		text = ""
